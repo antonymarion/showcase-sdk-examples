@@ -139,7 +139,7 @@ class SecurityCamera extends SceneComponent {
         geoms.push(geom);
       }
       // API to be updated in bundle - JSSDK-1222
-      return (THREE as any).mergeBufferGeometries(geoms);
+      return THREE.BufferGeometryUtils.mergeBufferGeometries(geoms);
     }
 
     const frustumLength = this.inputs.farPlane - this.inputs.nearPlane;
@@ -150,24 +150,22 @@ class SecurityCamera extends SceneComponent {
     const nearHalfHeight = nearHalfWidth / this.inputs.aspect;
     const farHalfHeight = farHalfWidth / this.inputs.aspect;
 
-    const positions = boxGeometry.getAttribute('position');
-
-    for (let i = 0; i<positions.count; i++ ) {
-      const vertexZ = positions.getZ(i);
-      const vertexX = positions.getX(i);
-      const vertexY = positions.getY(i);
-      if (vertexZ > 0) {
+    // @ts-ignore
+    for (const vertex of boxGeometry.vertices) {
+      if (vertex.z > 0) {
         // back of the camera
-        positions.setX(i, vertexX * nearHalfWidth)
-        positions.setY(i, vertexY * nearHalfHeight);
+        vertex.setX(vertex.x * nearHalfWidth);
+        vertex.setY(vertex.y * nearHalfHeight);
       }
       else {
         // front of the camera
-        positions.setX(i, vertexX * farHalfWidth)
-        positions.setY(i, vertexY * farHalfHeight);
+        vertex.setX(vertex.x * farHalfWidth);
+        vertex.setY(vertex.y * farHalfHeight);
       }
-      positions.setZ(i, vertexZ - 0.5 * frustumLength - this.inputs.nearPlane);
+      vertex.setZ(vertex.z - 0.5 * frustumLength - this.inputs.nearPlane);
     }
+    // @ts-ignore
+    boxGeometry.verticesNeedUpdate = true;
 
     var boxMaterial: MeshBasicMaterial = new THREE.MeshBasicMaterial({
       color: this.inputs.color,
